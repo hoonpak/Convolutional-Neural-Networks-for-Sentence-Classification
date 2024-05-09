@@ -75,7 +75,7 @@ def train(train_loader, train_size, val_loader, val_size, hyperparameters):
                 'loss': loss.item,
                 }, './bestCheckPoint.pth')
             
-            print(f'Epoch {epoch:05d}: valid accuracy improved from {best_acc:.5f} to {val_acc:.5f}, saving model to bestCheckPiont_resnet50.pth')
+            print(f'Epoch {epoch:05d}: valid accuracy improved from {best_acc:.5f} to {val_acc:.5f}, saving model to bestCheckPiont.pth')
             best_acc = val_acc
         else:
             print(f'Epoch {epoch:05d}: valid accuracy did not improve')
