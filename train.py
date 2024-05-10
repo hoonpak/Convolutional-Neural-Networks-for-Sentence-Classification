@@ -14,6 +14,19 @@ import numpy as np
 from model import Sentence_Classifier_CNN
 from utils import *
 
+import torch
+import numpy as np
+#random seed = [618, 3435, 0, 777, 42]
+seed = 0
+np.random.seed(seed)
+torch.manual_seed(seed)
+if torch.cuda.is_available() : 
+    print("GPU READY")
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+torch.backends.cudnn.benchmark = False
+# torch.backends.cudnn.deterministic = True
+
 def train(train_loader, train_size, val_loader, val_size, hyperparameters):
     batch_size = hyperparameters['batch_size']
 
@@ -24,7 +37,7 @@ def train(train_loader, train_size, val_loader, val_size, hyperparameters):
 
     epochs = hyperparameters['max_epoch']
         
-    writer = SummaryWriter()
+    writer = SummaryWriter(log_dir=f"./runs/{hyperparameters['model']}")
     best_acc = 0
     start = time.time()
     
@@ -35,7 +48,6 @@ def train(train_loader, train_size, val_loader, val_size, hyperparameters):
         for x, y in train_loader:
             x = x.cuda(0)
             y = y.cuda(0)
-            # print(x.shape)
             optimizer.zero_grad()
             predict = model.forward(x)
             loss = loss_function(predict, y)
@@ -66,7 +78,7 @@ def train(train_loader, train_size, val_loader, val_size, hyperparameters):
             val_loss /= val_iter
             val_acc /= val_iter
         
-        if val_acc > best_acc:
+        if val_acc >= best_acc:
             torch.save({
                 'epoch': epoch,
                 'model': model,
@@ -75,12 +87,12 @@ def train(train_loader, train_size, val_loader, val_size, hyperparameters):
                 'loss': loss.item,
                 }, './bestCheckPoint.pth')
             
-            print(f'Epoch {epoch:05d}: valid accuracy improved from {best_acc:.5f} to {val_acc:.5f}, saving model to bestCheckPiont.pth')
+            print(f'Epoch {epoch:05d}: valid accuracy improved from {best_acc:.3f} to {val_acc:.3f}, saving model to bestCheckPiont.pth')
             best_acc = val_acc
         else:
             print(f'Epoch {epoch:05d}: valid accuracy did not improve')
         
-        print(f'{int(time.time() - start)}s - loss: {train_loss:.5f} - acc: {train_acc:.5f} - val_loss: {val_loss:.5f} - val_acc: {val_acc:.5f} - best_acc: {best_acc:.5f}')
+        print(f'{int(time.time() - start)}s - loss: {train_loss:.3f} - acc: {train_acc:.3f} - val_loss: {val_loss:.3f} - val_acc: {val_acc:.3f} - best_acc: {best_acc:.3f}')
                     
         writer.add_scalars('loss', {'train_loss':train_loss, 'val_loss':val_loss}, epoch)
         writer.add_scalars('acc', {'train_acc':train_acc, 'val_acc':val_acc}, epoch)
@@ -108,8 +120,9 @@ def main():
     windows_size_list = [3,4,5]
     max_length = max(len(sen) for sen in train_x+test_x) + 2*(windows_size_list[-1] - 1)
     labels_num = len(id2label.keys())
-
-    hyperparameters = {'vocab_size' : vocab_size,
+    model_name = args.model
+    hyperparameters = {'model' : model_name,
+                    'vocab_size' : vocab_size,
                     'word_emb_dim' : 300,
                     'padding_idx' : 0,
                     'filter_num' : 100,
@@ -141,12 +154,12 @@ def main():
                 w2v_emb.append(pretrained_embedding[word])
                 inw2v += 1
             else:
-                w2v_emb.append(np.random.uniform(-0.5, 0.5, hyperparameters['word_emb_dim']).astype("float32"))
+                w2v_emb.append(np.random.uniform(-0.25, 0.25, hyperparameters['word_emb_dim']).astype("float32"))
         w2v_emb = torch.from_numpy(np.array(w2v_emb))
         print("number of vocab on the pre-trained vectors", inw2v)
 
     pretrained_embedding = None
-    model_info = model_information(args.model, w2v_emb)
+    model_info = model_information(model_name, w2v_emb)
     hyperparameters.update(model_info)
     
     if is_cv(task):
@@ -182,7 +195,8 @@ def main():
                 test_cor += sum(outputs.max(dim=1)[1] == test_y.cuda(0)).item()
             test_acc = test_cor/test_size
                 
-        print(f'Accuracy of the network on the test data: {100 * test_acc:.5f}')
-        
+        print(f'Accuracy of the network on the test data: {100 * test_acc:.3f}')
+    return test_acc
+
 if __name__ == "__main__":
-    main()
+    test_acc = main()

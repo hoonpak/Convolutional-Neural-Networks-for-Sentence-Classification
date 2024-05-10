@@ -3,13 +3,13 @@ import torch
 
 def model_information(model, w2v_emb):
     if model == "rand":
-        return {'channel' : 1, 'w2v_emb' : w2v_emb, 'static' : False}
+        return {'channel' : 1, 'w2v_emb' : w2v_emb}
     elif model == "static":
-        return {'channel' : 1, 'w2v_emb' : w2v_emb, 'static' : True}
+        return {'channel' : 1, 'w2v_emb' : w2v_emb}
     elif model == "non-static":
-        return {'channel' : 1, 'w2v_emb' : w2v_emb, 'static' : False}
+        return {'channel' : 1, 'w2v_emb' : w2v_emb}
     elif model == "multichannel":
-        return {'channel' : 2, 'w2v_emb' : w2v_emb, 'static' : None}
+        return {'channel' : 2, 'w2v_emb' : w2v_emb}
     else:
         raise AttributeError(f"There is no model {model}! Chech your argument option!")
 
@@ -21,22 +21,18 @@ def is_cv(task):
 
 def cleaning(sentence, task):
     if task not in ["sst1", "sst2"]:
-        sentence = re.sub(r"``", '"', sentence)
-        sentence = re.sub(r"''", '"', sentence)
-        sentence = re.sub(r"�", ' ', sentence)
-        sentence = re.sub(r"\n", '', sentence)
-        # sentence = re.sub(r"[^A-Za-z0-9(),!?\"\'\`]", " ", sentence)     
-        # sentence = re.sub(r"\'s", " \'s", sentence) 
-        # sentence = re.sub(r"\'ve", " \'ve", sentence) 
-        # sentence = re.sub(r"n\'t", " n\'t", sentence) 
-        # sentence = re.sub(r"\'re", " \'re", sentence) 
-        # sentence = re.sub(r"\'d", " \'d", sentence) 
-        # sentence = re.sub(r"\'ll", " \'ll", sentence) 
-        # sentence = re.sub(r",", " , ", sentence) 
-        # sentence = re.sub(r"!", " ! ", sentence) 
-        # sentence = re.sub(r"\(", " ( ", sentence) 
-        # sentence = re.sub(r"\)", " ) ", sentence) 
-        # sentence = re.sub(r"\?", " ? ", sentence) 
+        sentence = re.sub(r"[^A-Za-z0-9(),!?\"\'\`]", " ", sentence)     
+        sentence = re.sub(r"\'s", " \'s", sentence) 
+        sentence = re.sub(r"\'ve", " \'ve", sentence) 
+        sentence = re.sub(r"n\'t", " n\'t", sentence) 
+        sentence = re.sub(r"\'re", " \'re", sentence) 
+        sentence = re.sub(r"\'d", " \'d", sentence) 
+        sentence = re.sub(r"\'ll", " \'ll", sentence) 
+        sentence = re.sub(r",", " , ", sentence) 
+        sentence = re.sub(r"!", " ! ", sentence) 
+        sentence = re.sub(r"\(", " ( ", sentence) 
+        sentence = re.sub(r"\)", " ) ", sentence) 
+        sentence = re.sub(r"\?", " ? ", sentence) 
         sentence = re.sub(r"\s{2,}", " ", sentence)
         if task != 'trec':
             sentence = sentence.lower()
@@ -54,7 +50,6 @@ def get_data(path: str, task: str) -> tuple[list, list]:
                 labels.append(label_sentence[0])
                 sentence = cleaning(label_sentence[1], task=task)
                 tokenized_sentence = sentence.strip().split(" ")[1:] #A:B 형식으로 label이 있는거 같은데 B를 포함하는지 않하는지 모르겠네
-                # tokenized_sentence = sentence.strip().split(" ")
                 sentences.append(tokenized_sentence)
     
     return sentences, labels

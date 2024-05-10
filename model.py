@@ -5,10 +5,10 @@ class Sentence_Classifier_CNN(nn.Module):
     def __init__(self, hyperparameters):
         super(Sentence_Classifier_CNN, self).__init__()
         
+        model_name = hyperparameters['model']
         vocab_size = hyperparameters['vocab_size']
         self.word_emb_dim = hyperparameters['word_emb_dim']
         w2v_emb = hyperparameters['w2v_emb'] #pre-trained word2vec embedding vectors
-        static = hyperparameters['static']
         padding_idx = hyperparameters['padding_idx']
         self.channel = hyperparameters['channel']
         filter_num = hyperparameters['filter_num']
@@ -18,14 +18,14 @@ class Sentence_Classifier_CNN(nn.Module):
         dropout_rate = hyperparameters['dropout_rate']
         labels_num = hyperparameters['labels_num']
         
-        if self.channel == 1:
+        if model_name == 'rand':
             self.embedding = nn.Embedding(num_embeddings=vocab_size, embedding_dim=self.word_emb_dim, padding_idx=padding_idx)
-            if w2v_emb != None:
-                self.embedding.from_pretrained(w2v_emb)
-            if static:
-                self.embedding.weight.requires_grad = False
-        
-        if self.channel == 2:
+            nn.init.uniform_(self.embedding.weight, a=-0.25, b=0.25)
+        if model_name == 'static':
+            self.embedding = nn.Embedding.from_pretrained(w2v_emb, freeze=True, padding_idx=padding_idx)
+        if model_name == 'non-static':
+            self.embedding = nn.Embedding.from_pretrained(w2v_emb, freeze=False, padding_idx=padding_idx)
+        if model_name == 'multichannel':
             self.embedding_static = nn.Embedding.from_pretrained(w2v_emb, freeze=True, padding_idx=padding_idx)
             self.embedding_tuning = nn.Embedding.from_pretrained(w2v_emb, freeze=False, padding_idx=padding_idx)
         
@@ -33,20 +33,28 @@ class Sentence_Classifier_CNN(nn.Module):
         self.conv_win3_block = nn.Sequential(nn.Conv2d(in_channels=self.channel, out_channels=filter_num, kernel_size=(window_size_list[0], self.word_emb_dim), stride=stride),
                                             nn.ReLU(),
                                             nn.MaxPool2d(kernel_size=(conv3_output_length,1)))
+        nn.init.uniform_(self.conv_win3_block[0].weight, a=-0.01, b=0.01)
+        nn.init.zeros_(self.conv_win3_block[0].bias)
         
         conv4_output_length = self.max_length-window_size_list[1]+1
         self.conv_win4_block = nn.Sequential(nn.Conv2d(in_channels=self.channel, out_channels=filter_num, kernel_size=(window_size_list[1], self.word_emb_dim), stride=stride),
                                             nn.ReLU(),
                                             nn.MaxPool2d(kernel_size=(conv4_output_length,1)))
+        nn.init.uniform_(self.conv_win4_block[0].weight, a=-0.01, b=0.01)
+        nn.init.zeros_(self.conv_win4_block[0].bias)
         
         conv5_output_length = self.max_length-window_size_list[2]+1
         self.conv_win5_block = nn.Sequential(nn.Conv2d(in_channels=self.channel, out_channels=filter_num, kernel_size=(window_size_list[2], self.word_emb_dim), stride=stride),
                                             nn.ReLU(),
                                             nn.MaxPool2d(kernel_size=(conv5_output_length,1)))
+        nn.init.uniform_(self.conv_win5_block[0].weight, a=-0.01, b=0.01)
+        nn.init.zeros_(self.conv_win5_block[0].bias)
         
         self.dropout = nn.Dropout(p=dropout_rate)
         self.in_linear = filter_num*3
-        self.output_layer = nn.Linear(self.in_linear, labels_num)        
+        self.output_layer = nn.Linear(self.in_linear, labels_num)
+        nn.init.xavier_uniform_(self.output_layer.weight)
+        nn.init.zeros_(self.output_layer.bias)
         
     def forward(self, x):
         """
