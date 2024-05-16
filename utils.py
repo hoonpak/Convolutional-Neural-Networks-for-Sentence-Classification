@@ -1,5 +1,6 @@
 import re
 import torch
+import os
 
 def model_information(model, w2v_emb):
     if model == "rand":
@@ -36,22 +37,143 @@ def cleaning(sentence, task):
         sentence = re.sub(r"\s{2,}", " ", sentence)
         if task != 'trec':
             sentence = sentence.lower()
+    else:
+        sentence = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", sentence)   
+        sentence = re.sub(r"\s{2,}", " ", sentence)    
+        sentence = sentence.lower()
     return sentence
 
-def get_data(path: str, task: str) -> tuple[list, list]:
+def get_trec(path, task, max_l):
     labels = []
     sentences = []
     
-    if task == "trec":
-        with open(path, "rb") as file:
-            lines = file.readlines()
-            for line in lines:
-                label_sentence = line.decode("utf-8", "replace").split(":")
-                labels.append(label_sentence[0])
-                sentence = cleaning(label_sentence[1], task=task)
-                tokenized_sentence = sentence.strip().split(" ")[1:] #A:B 형식으로 label이 있는거 같은데 B를 포함하는지 않하는지 모르겠네
-                sentences.append(tokenized_sentence)
+    with open(path, "rb") as file:
+        lines = file.readlines()
+        for line in lines:
+            label_sentence = line.decode("utf-8", "replace").split(":")
+            sentence = cleaning(label_sentence[1], task=task)
+            tokenized_sentence = sentence.strip().split(" ")[1:]
+            tokenized_sentence = [token.strip() for token in tokenized_sentence]
+            if len(tokenized_sentence) > max_l:
+                continue
+            sentences.append(tokenized_sentence)
+            labels.append(label_sentence[0])
     
+    return sentences, labels
+
+def get_cr(path, task, max_l):
+    labels = []
+    sentences = []
+    product_ls = os.listdir(path)
+    positive_negative_pattern = r'(\+?\-?)\d+'
+
+    for product in product_ls:
+        data_path = path + product
+        with open(data_path, "rb") as file:
+            document = file.readlines()
+            for sentence in document:
+                sentence = sentence.decode(errors="replace")
+                if "##" in sentence:
+                    label_sentence = sentence.split("##")
+                    if len(label_sentence) != 2:
+                        continue
+                    if label_sentence[0] != '':
+                        processed_sentence = cleaning(label_sentence[1], task=task)
+                        processed_sentence = processed_sentence.strip().split(" ")
+                        processed_sentence = [token.strip() for token in processed_sentence]
+                        if len(processed_sentence) > max_l:
+                            continue
+                        category_score = re.findall(positive_negative_pattern, label_sentence[0])
+                        category_score = set(category_score)
+                        if set("+") == category_score or set(["+",""]) == category_score:
+                            labels.append("positive")
+                            sentences.append(processed_sentence)
+                        elif set("-") == category_score or set(["-",""]) == category_score:
+                            labels.append("negative")
+                            sentences.append(processed_sentence)
+                        else:
+                            continue
+    
+    return sentences, labels
+
+def get_mr(path, task, max_l):
+    labels = []
+    sentences = []
+    
+    with open(path + "pos", "rb") as file:
+        document = file.readlines()
+        for sentence in document:
+            sentence = sentence.decode(errors="replace")
+            sentence = cleaning(sentence, task)
+            tokenized_sentence = sentence.strip().split(" ")
+            tokenized_sentence = [token.strip() for token in tokenized_sentence]
+            if len(tokenized_sentence) >= max_l:
+                continue
+            sentences.append(tokenized_sentence)
+            labels.append("positive")
+            
+    with open(path + "neg", "rb") as file:
+        document = file.readlines()
+        for sentence in document:
+            sentence = sentence.decode(errors="replace")
+            sentence = cleaning(sentence, task)
+            tokenized_sentence = sentence.strip().split(" ")
+            tokenized_sentence = [token.strip() for token in tokenized_sentence]
+            if len(tokenized_sentence) >= max_l:
+                continue
+            sentences.append(tokenized_sentence)
+            labels.append("negative")
+            
+    return sentences, labels
+
+def get_mpqa(path, task, max_l):
+    labels = []
+    sentences = []
+    
+    with open(path + "all", "rb") as file:
+        lines = file.readlines()
+        for line in lines:
+            line = line.decode(errors="replace")
+            line = cleaning(line, task)
+            tokenized_sentence = line.strip().split(" ")
+            tokenized_sentence = [token.strip() for token in tokenized_sentence]
+            if len(tokenized_sentence) >= max_l:
+                continue
+            sentences.append(tokenized_sentence[1:])
+            labels.append(tokenized_sentence[0])
+            
+    return sentences, labels
+    
+def get_subj(path, task, max_l):
+    labels = []
+    sentences = []
+    
+    with open(path + "all", "rb") as file:
+        lines = file.readlines()
+        for line in lines:
+            line = line.decode(errors="replace")
+            line = cleaning(line, task)
+            tokenized_sentence = line.strip().split(" ")
+            tokenized_sentence = [token.strip() for token in tokenized_sentence]
+            if len(tokenized_sentence) >= max_l:
+                continue
+            sentences.append(tokenized_sentence[1:])
+            labels.append(tokenized_sentence[0])
+            
+    return sentences, labels
+
+def get_data(path: str, task: str, max_l = 51) -> tuple[list, list]:
+    if task == "trec":
+        sentences, labels = get_trec(path, task, max_l)
+    if task == "cr":
+        sentences, labels = get_cr(path, task, max_l)
+    if task == "mr":
+        sentences, labels = get_mr(path, task, max_l)
+    if task == "mpqa":
+        sentences, labels = get_mpqa(path, task, max_l)
+    if task == "subj":
+        sentences, labels = get_subj(path, task, max_l)
+
     return sentences, labels
 
 def create_vocab(sentences:list) -> tuple[dict, dict]:
