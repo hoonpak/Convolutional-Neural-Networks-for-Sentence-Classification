@@ -126,11 +126,11 @@ def get_mr(path, task, max_l):
             
     return sentences, labels
 
-def get_mpqa(path, task, max_l):
+def get_sst(path, task, max_l):
     labels = []
     sentences = []
     
-    with open(path + "all", "rb") as file:
+    with open(path, "rb") as file:
         lines = file.readlines()
         for line in lines:
             line = line.decode(errors="replace")
@@ -143,8 +143,8 @@ def get_mpqa(path, task, max_l):
             labels.append(tokenized_sentence[0])
             
     return sentences, labels
-    
-def get_subj(path, task, max_l):
+
+def get_others(path, task, max_l):
     labels = []
     sentences = []
     
@@ -169,10 +169,10 @@ def get_data(path: str, task: str, max_l = 51) -> tuple[list, list]:
         sentences, labels = get_cr(path, task, max_l)
     if task == "mr":
         sentences, labels = get_mr(path, task, max_l)
-    if task == "mpqa":
-        sentences, labels = get_mpqa(path, task, max_l)
-    if task == "subj":
-        sentences, labels = get_subj(path, task, max_l)
+    if task in ["sst1", "sst2"]:
+        sentences, labels = get_sst(path, task, max_l)
+    if task in ["mpqa", "subj"]:
+        sentences, labels = get_others(path, task, max_l)
 
     return sentences, labels
 

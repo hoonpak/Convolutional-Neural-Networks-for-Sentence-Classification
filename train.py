@@ -47,7 +47,7 @@ def train(train_loader, train_size, val_loader, val_size, hyperparameters, gpu_n
 
     epochs = hyperparameters['max_epoch']
         
-    writer = SummaryWriter(log_dir=f"./runs/{hyperparameters['model']}")
+    writer = SummaryWriter(log_dir=f"./runs/{hyperparameters['seed']}_{hyperparameters['model']}_{hyperparameters['task']}")
     best_acc = 0
     start = time.time()
     
@@ -99,11 +99,15 @@ def train(train_loader, train_size, val_loader, val_size, hyperparameters, gpu_n
             
             print(f"Epoch {epoch:05d}: valid accuracy improved from {best_acc:.3f} to {val_acc:.3f}, saving model to {hyperparameters['seed']}_{hyperparameters['model']}_bestCheckPoint.pth")
             best_acc = val_acc
+
+            if train_loss <= 0.01:
+                break
+
         else:
             pass
             # print(f'Epoch {epoch:05d}: valid accuracy did not improve')
         
-        # print(f'{int(time.time() - start)}s - loss: {train_loss:.3f} - acc: {train_acc:.3f} - val_loss: {val_loss:.3f} - val_acc: {val_acc:.3f} - best_acc: {best_acc:.3f}')
+        print(f'{epoch:03d} Epoch {int(time.time() - start)}s - loss: {train_loss:.3f} - acc: {train_acc:.3f} - val_loss: {val_loss:.3f} - val_acc: {val_acc:.3f} - best_acc: {best_acc:.3f}')
                     
         writer.add_scalars('loss', {'train_loss':train_loss, 'val_loss':val_loss}, epoch)
         writer.add_scalars('acc', {'train_acc':train_acc, 'val_acc':val_acc}, epoch)
@@ -112,7 +116,12 @@ def train(train_loader, train_size, val_loader, val_size, hyperparameters, gpu_n
     print("-"*40,"FINISH","-"*40)
 
 def training_and_test(train_x, train_y, test_x, test_y, hyperparameters, gpu_num, seed):
-    train_x, valid_x, train_y, valid_y = train_test_split(train_x, train_y, test_size=0.1, random_state=seed, shuffle=True, stratify=train_y)
+    if hyperparameters['task'] in ['sst1', 'sst2']:
+        train_x, valid_x = train_x
+        train_y, valid_y = train_y
+    else:
+        train_x, valid_x, train_y, valid_y = train_test_split(train_x, train_y, test_size=0.1, random_state=seed, shuffle=True, stratify=train_y)
+
     training_data = list(zip(train_x, train_y))
     valid_data = list(zip(valid_x, valid_y))
     test_data = list(zip(test_x, test_y))
@@ -149,18 +158,28 @@ def main(model_name, task, max_l, gpu_num, seed):
     if is_cv(task):
         train_path = f'./data_/{task}/'
         train_x, train_y = get_data(train_path, task, max_l=max_l)
+        valid_x, valid_y = [], []
         test_x, test_y = [], []
     else:
-        train_path = f'./data_/{task}/train'
-        test_path = f'./data_/{task}/test'
-        train_x, train_y = get_data(train_path, task, max_l=max_l)
-        test_x, test_y = get_data(test_path, task, max_l=max_l)
+        if task == "trec":
+            train_path = f'./data_/{task}/train'
+            test_path = f'./data_/{task}/test'
+            train_x, train_y = get_data(train_path, task, max_l=max_l)
+            valid_x, valid_y = [], []
+            test_x, test_y = get_data(test_path, task, max_l=max_l)
+        else:
+            train_path = f'./data_/{task}/train'
+            valid_path = f'./data_/{task}/valid'
+            test_path = f'./data_/{task}/test'
+            train_x, train_y = get_data(train_path, task, max_l=max_l)
+            valid_x, valid_y = get_data(valid_path, task, max_l=max_l)
+            test_x, test_y = get_data(test_path, task, max_l=max_l)
     
-    word2id, id2word = create_vocab(train_x+test_x)
+    word2id, id2word = create_vocab(train_x+valid_x+test_x)
     label2id, id2label = label_encoder(train_y)
     vocab_size = len(id2word.keys())
     windows_size_list = [3,4,5]
-    max_length = max(len(sen) for sen in (train_x+test_x)) + 2*(windows_size_list[-1] - 1)
+    max_length = max(len(sen) for sen in (train_x+valid_x+test_x)) + 2*(windows_size_list[-1] - 1)
     labels_num = len(id2label.keys())
     
     hyperparameters = {'model' : model_name,
@@ -175,7 +194,7 @@ def main(model_name, task, max_l, gpu_num, seed):
                        'max_length' : max_length,
                        'dropout_rate' : 0.5,
                        'labels_num' : labels_num,
-                       'max_epoch' : 100,
+                       'max_epoch' : 25,
                        'batch_size' : 50,
                        'word2id' : word2id,
                        'label2id' : label2id,
@@ -205,7 +224,12 @@ def main(model_name, task, max_l, gpu_num, seed):
         test_acc /= 10
         print(f"The average of test accuracy {test_acc*100:.3f}")
     else:
-        test_acc = training_and_test(train_x, train_y, test_x, test_y, hyperparameters, gpu_num)
+        if task == "trec":
+            test_acc = training_and_test(train_x, train_y, test_x, test_y, hyperparameters, gpu_num, seed)
+        else:
+            train_x = (train_x, valid_x)
+            train_y = (train_y, valid_y)
+            test_acc = training_and_test(train_x, train_y, test_x, test_y, hyperparameters, gpu_num, seed)
     return test_acc
 
 if __name__ == "__main__":
@@ -228,6 +252,6 @@ if __name__ == "__main__":
     model_name = args.model
     task = args.task
     max_l = 51
-    gpu_num = 1
+    gpu_num = 0
     
     test_acc = main(model_name, task, max_l, gpu_num, seed)
