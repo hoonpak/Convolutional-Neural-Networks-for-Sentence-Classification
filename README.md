@@ -43,7 +43,7 @@ This is the implementation of [Convolutional Neural Networks for Sentence Classi
 
 
 ### Detail about Model
-![Alt text](cnn_diagram.png)
+![Alt text](./data_/cnn_diagram.png)
 
 ## Training Dataset
 - ["MR"](https://www.cs.cornell.edu/people/pabo/movie-review-data/): Movie reviews with one sentence per review. Classification involves detecting positive/negative reviews (Pang and Lee, 2005).  
