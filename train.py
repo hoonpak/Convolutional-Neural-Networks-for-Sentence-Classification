@@ -42,7 +42,7 @@ def train(train_loader, train_size, val_loader, val_size, hyperparameters, gpu_n
 
     model = Sentence_Classifier_CNN(hyperparameters=hyperparameters).cuda(gpu_num)
     parameters = filter(lambda p: p.requires_grad, model.parameters())
-    optimizer = torch.optim.Adadelta(parameters, lr=hyperparameters['learning_rate'])
+    optimizer = torch.optim.Adadelta(parameters, lr=hyperparameters['learning_rate'], rho=0.95)
     loss_function = nn.CrossEntropyLoss().cuda(gpu_num)
 
     epochs = hyperparameters['max_epoch']
@@ -50,6 +50,7 @@ def train(train_loader, train_size, val_loader, val_size, hyperparameters, gpu_n
     writer = SummaryWriter(log_dir=f"./runs/{hyperparameters['seed']}_{hyperparameters['model']}_{hyperparameters['task']}")
     best_acc = 0
     start = time.time()
+    count = 10
     
     for epoch in range(epochs):
         train_loss = 0
@@ -88,7 +89,7 @@ def train(train_loader, train_size, val_loader, val_size, hyperparameters, gpu_n
             val_loss /= val_iter
             val_acc /= val_iter
         
-        if val_acc >= best_acc:
+        if val_acc > best_acc:
             torch.save({
                 'epoch': epoch,
                 'model': model,
@@ -99,11 +100,13 @@ def train(train_loader, train_size, val_loader, val_size, hyperparameters, gpu_n
             
             print(f"Epoch {epoch:05d}: valid accuracy improved from {best_acc:.3f} to {val_acc:.3f}, saving model to {hyperparameters['seed']}_{hyperparameters['model']}_bestCheckPoint.pth")
             best_acc = val_acc
-
-            if train_loss <= 0.01:
-                break
-
+            count = 10
+            if train_loss <= 0.0001:
+                break                
         else:
+            if count == 0:
+                break
+            count -= 1
             pass
             # print(f'Epoch {epoch:05d}: valid accuracy did not improve')
         
@@ -194,7 +197,7 @@ def main(model_name, task, max_l, gpu_num, seed):
                        'max_length' : max_length,
                        'dropout_rate' : 0.5,
                        'labels_num' : labels_num,
-                       'max_epoch' : 25,
+                       'max_epoch' : 100,
                        'batch_size' : 50,
                        'word2id' : word2id,
                        'label2id' : label2id,
