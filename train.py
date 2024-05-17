@@ -42,7 +42,7 @@ def train(train_loader, train_size, val_loader, val_size, hyperparameters, gpu_n
 
     model = Sentence_Classifier_CNN(hyperparameters=hyperparameters).cuda(gpu_num)
     parameters = filter(lambda p: p.requires_grad, model.parameters())
-    optimizer = torch.optim.Adadelta(parameters, lr=hyperparameters['learning_rate'], rho=0.95)
+    optimizer = torch.optim.Adadelta(parameters, lr=hyperparameters['learning_rate'], rho=0.95, weight_decay=1e-8)
     loss_function = nn.CrossEntropyLoss().cuda(gpu_num)
 
     epochs = hyperparameters['max_epoch']
@@ -50,7 +50,7 @@ def train(train_loader, train_size, val_loader, val_size, hyperparameters, gpu_n
     writer = SummaryWriter(log_dir=f"./runs/{hyperparameters['seed']}_{hyperparameters['model']}_{hyperparameters['task']}")
     best_acc = 0
     start = time.time()
-    count = 10
+    count = 7
     
     for epoch in range(epochs):
         train_loss = 0
@@ -100,9 +100,9 @@ def train(train_loader, train_size, val_loader, val_size, hyperparameters, gpu_n
             
             print(f"Epoch {epoch:05d}: valid accuracy improved from {best_acc:.3f} to {val_acc:.3f}, saving model to {hyperparameters['seed']}_{hyperparameters['model']}_bestCheckPoint.pth")
             best_acc = val_acc
-            count = 10
-            if train_loss <= 0.0001:
-                break                
+            count = 7
+            # if train_loss <= 0.0001:
+            #     break                
         else:
             if count == 0:
                 break
