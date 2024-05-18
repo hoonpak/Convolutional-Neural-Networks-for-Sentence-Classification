@@ -1,6 +1,6 @@
 # Convolutional Neural Networks for Sentence Classification
 
-This is the implementation of [Convolutional Neural Networks for Sentence Classification](https://aclanthology.org/D14-1181) (Kim, EMNLP 2014) on python with numpy library.
+This is the implementation of [Convolutional Neural Networks for Sentence Classification](https://aclanthology.org/D14-1181) (Kim, EMNLP 2014) on python with pytorch library.
 
 ## Results
 
