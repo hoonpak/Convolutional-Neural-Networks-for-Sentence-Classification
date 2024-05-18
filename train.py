@@ -1,8 +1,9 @@
 import argparse
-from functools import partial
+import random
 import time
 import warnings
 warnings.filterwarnings(action='ignore')
+from functools import partial
 
 import torch
 from torch import nn
@@ -244,6 +245,7 @@ if __name__ == "__main__":
     
     #random seed = [0 ,618, 3435 , 777, 42]
     seed = int(args.seed)
+    random.seed(0)
     np.random.seed(seed)
     torch.manual_seed(seed)
     if torch.cuda.is_available() : 
@@ -251,6 +253,7 @@ if __name__ == "__main__":
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
     
     model_name = args.model
     task = args.task
