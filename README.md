@@ -10,30 +10,30 @@ This is the implementation of [Convolutional Neural Networks for Sentence Classi
 |         |    static    | 81.0  | 80.2 |
 |         |  non-static  | 81.5  | 81.2 |
 |         | multichannel | 81.1  | 80.6 |
-|  SST-1  |     rand     | 45.0  | 43.7 |
+|  SST-1  |     rand     | 45.0  | 44.5 |
 |         |    static    | 45.5  | 44.8 |
-|         |  non-static  | 48.0  | 46.2 |
-|         | multichannel | 47.4  | 45.6 |
-|  SST-2  |     rand     | 82.7  | 84.2 |
-|         |    static    | 86.8  | 86.2 |
-|         |  non-static  | 87.2  | 86.9 |
-|         | multichannel | 88.1  | 87.2 |
+|         |  non-static  | 48.0  | 47.0 |
+|         | multichannel | 47.4  | 45.7 |
+|  SST-2  |     rand     | 82.7  | 84.1 |
+|         |    static    | 86.8  | 86.4 |
+|         |  non-static  | 87.2  | 87.3 |
+|         | multichannel | 88.1  | 87.7 |
 |   Subj  |     rand     | 89.6  | 89.1 |
-|         |    static    | 93.0  | 93.0 |
-|         |  non-static  | 93.4  | 93.0 |
+|         |    static    | 93.0  | 92.9 |
+|         |  non-static  | 93.4  | 93.1 |
 |         | multichannel | 93.2  | 93.1 |
-|   TREC  |     rand     | 91.2  | 90.4 |
-|         |    static    | 92.8  | 92.6 |
-|         |  non-static  | 93.6  | 92.8 |
-|         | multichannel | 92.2  | 93.0 |
+|   TREC  |     rand     | 91.2  | 89.6 |
+|         |    static    | 92.8  | 92.4 |
+|         |  non-static  | 93.6  | 93.4 |
+|         | multichannel | 92.2  | 92.6 |
 |   CR    |     rand     | 79.8  | 78.8 |
 |         |    static    | 84.7  | 84.1 |
 |         |  non-static  | 84.3  | 84.9 |
-|         | multichannel | 85.0  | 84.5 |
-|   MPQA  |     rand     | 83.4  | 84.3 |
-|         |    static    | 89.6  | 89.5 |
-|         |  non-static  | 89.5  | 89.4 |
-|         | multichannel | 89.4  | 89.4 |
+|         | multichannel | 85.0  | 84.7 |
+|   MPQA  |     rand     | 83.4  | 84.1 |
+|         |    static    | 89.6  | 89.6 |
+|         |  non-static  | 89.5  | 89.5 |
+|         | multichannel | 89.4  | 89.5 |
 
 ## Specification
 
